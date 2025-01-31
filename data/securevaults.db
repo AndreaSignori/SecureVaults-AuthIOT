@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS devices (
+    device_ID TEXT PRIMARY KEY,
+    secure_vault TEXT DEFAULT NULL
+);
