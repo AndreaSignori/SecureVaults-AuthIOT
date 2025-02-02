@@ -8,12 +8,12 @@ WORKDIR /svr
 RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
 
 # Set up and activate virtual environment
-ENV VIRTUAL_ENV "/venv"
+ENV VIRTUAL_ENV="/venv"
 RUN python -m venv $VIRTUAL_ENV
-ENV PATH "$VIRTUAL_ENV/bin:$PATH"
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Copy the application script into the container
-COPY server .
+COPY . .
 
 # Run the Python script
 CMD ["python3", "test.py"]
