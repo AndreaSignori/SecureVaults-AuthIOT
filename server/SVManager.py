@@ -7,14 +7,13 @@ class SVManager:
     Our database is formed by a single table called `devices`, where each secure vault has associated an IoT device
     since each one has a unique identifier.
     """
+    # TODO: gestione cifratura SV
     def __init__(self, db_name: str):
         """
-        Initialize new instance of the class.
-
         :param db_name: database name (the file name should be end without db)
         """
         if db_name is not None:
-            self._db_name : str = db_name
+            self._db_name: str = db_name
         #self._connection : sqlite3.Connection|None = None
         #self.cursor : sqlite3.Cursor|None = None
 
