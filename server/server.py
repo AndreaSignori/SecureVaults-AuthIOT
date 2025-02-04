@@ -1,9 +1,13 @@
+import socket
+
 from helper import AuthHelper
 
 import socketserver
 
 # CONFIG parameters
 SESSION_KEY = b"chiave di prova"
+TIMEOUT = 1
+DEVICE_ID_LENGTH = 11
 
 class AuthenticationHandler(socketserver.BaseRequestHandler):
     def __init__(self, request, client_address, server):
