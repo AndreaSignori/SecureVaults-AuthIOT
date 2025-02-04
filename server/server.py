@@ -10,15 +10,10 @@ TIMEOUT = 1
 DEVICE_ID_LENGTH = 11
 
 class AuthenticationHandler(socketserver.BaseRequestHandler):
-    def __init__(self, request, client_address, server):
-        super().__init__(request, client_address, server)
-        self._helper: AuthHelper = AuthHelper(SESSION_KEY)
-        self._sessionID = None
-        self._deviceID = None
-
     def handle(self):
         self.request.settimeout(TIMEOUT) # setting up the timeout to receiving next message from the client
         buffer: bytes = b''
+        helper: AuthHelper = AuthHelper(SESSION_KEY)
 
         try:
             # AUTHENTICATION
@@ -26,29 +21,30 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
             # STEP1: receiving M1 from IoT device
             m1 = self.request.recv(1024)
 
-            self._deviceID = m1[: DEVICE_ID_LENGTH]
-            self._sessionID = m1[DEVICE_ID_LENGTH:]
+            device_ID: bytes = m1[: DEVICE_ID_LENGTH]
+            session_ID: bytes = m1[DEVICE_ID_LENGTH :]
 
-            print(f"Device ID: {self._deviceID}")
-            print(f"Session ID: {self._sessionID}")
+            print(f"Device ID: {device_ID}")
+            print(f"Session ID: {session_ID}")
 
-        # STEP 1-2: verifying the deviceID validity
-        op_res = self._helper.set_vault(None, self._deviceID)
+            # STEP 1-2: verifying the deviceID validity
+            op_res = helper.set_vault(None, device_ID.decode())
 
-        if not op_res.startswith("OK"):
-            return
+            print(op_res)
 
-        # STEP 2: creates and sends M2 to IoT device
-        self.request.sendall(self._helper.create_m2())
+            if not op_res.startswith("OK"):
+                return
+            # STEP 2: creates and sends M2 to IoT device
+            #self.request.sendall(self._helper.create_m2())
 
-        # STEP 3: receiving M3 from IoT device
-        m3 = self.request.settimeout(self._timeout)
+            # STEP 3: receiving M3 from IoT device
+            #m3 = self.request.settimeout(self._timeout)
 
-        # STEP 3-4: verifying the IoT device's response
-        self._helper.verify_device_response()
+            # STEP 3-4: verifying the IoT device's response
+            #self._helper.verify_device_response()
 
-        #STEP 4: create and sends M4 to IoT device
-        self.request.sendall(self._helper.create_m4())
+            #STEP 4: create and sends M4 to IoT device
+            #self.request.sendall(self._helper.create_m4())
 
             # RECEIVING DATA
             while not (data := self.request.recv(1024)) == b'':

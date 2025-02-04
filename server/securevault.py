@@ -1,8 +1,11 @@
+import numpy as np
+
 from utils.utils import padding
 
 import hmac
 import hashlib
 import random
+import numpy
 
 PARTITION_DIM = 256 # linked to the hash function used for HMAC
 
@@ -15,7 +18,7 @@ class SecureVault:
         :param sv: list of all keys that belong to the secure vault.
         """
         self._n: int = len(sv) # number of keys in the secure vault
-        self._m: int = max([key.bit_length() for key in sv]) # number of bits for each keys
+        self._m: int = sv[np.argmax(sv)].bit_length() # number of bits for each keys. We are interested in the maximum value of bit for each key
         self._sv: list = sv
 
     def get_vault_dim(self) -> int:
