@@ -1,8 +1,8 @@
-import socket
-
 from helper import AuthHelper
 
+import socket
 import socketserver
+import json
 
 # CONFIG parameters
 SESSION_KEY = b"chiave di prova"
@@ -30,12 +30,13 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
             # STEP 1-2: verifying the deviceID validity
             op_res = helper.set_vault(None, device_ID.decode())
 
-            print(op_res)
-
             if not op_res.startswith("OK"):
                 return
+
             # STEP 2: creates and sends M2 to IoT device
-            #self.request.sendall(self._helper.create_m2())
+            print("Sending M2 to the client!")
+
+            self.request.sendall(helper.create_m2())
 
             # STEP 3: receiving M3 from IoT device
             #m3 = self.request.settimeout(self._timeout)

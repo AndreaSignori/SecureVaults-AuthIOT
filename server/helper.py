@@ -44,13 +44,13 @@ class AuthHelper:
                 return f"Device with ID {id} isn't registered!"
             return "OK: Secure vault set"
 
-    def create_m2(self) -> dict:
+    def create_m2(self) -> bytes:
         self._c1: np.ndarray= randint(0, self._secure_vault.get_vault_dim(),
                                       size=(randint(0, self._secure_vault.get_vault_dim()),),
                                       dtype=int)
         self._r1 = randint(GENERATOR_UPPER_BOUND)
 
-        return {"C1": self._c1, "r1": self._r1}
+        return str({"C1": ",".join(map(str, self._c1)), "r1": self._r1}).encode()
 
     def verify_device_response(self):
         pass
