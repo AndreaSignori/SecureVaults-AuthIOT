@@ -6,20 +6,27 @@ import socketserver
 SESSION_KEY = b"chiave di prova"
 
 class AuthenticationHandler(socketserver.BaseRequestHandler):
-    def __init__(self):
-        super().__init__(self.request, self.client_address, self.server)
+    def __init__(self, request, client_address, server):
+        super().__init__(request, client_address, server)
         self._helper: AuthHelper = AuthHelper(SESSION_KEY)
-        self._buffer: str = ""
-        self._deviceID: str = ""
-        self._sessioID: str = ""
-        self._timeout: int = 1 # express in second
+        self._sessionID = None
+        self._deviceID = None
+
     def handle(self):
-        # TODO: serve un protocollo per identificare i pacchetti per gestire al meglio il server
-        # AUTHENTICATION
-        # STEP1: receiving M1 from IoT device
-        m1 = self.request.settimeout(self._timeout)
-        self._deviceID = m1[: ...] # TODO: difinire limiti
-        self._sessioID = m1[: ...] # TODO: definire limiti
+        self.request.settimeout(TIMEOUT) # setting up the timeout to receiving next message from the client
+        buffer: bytes = b''
+
+        try:
+            # AUTHENTICATION
+
+            # STEP1: receiving M1 from IoT device
+            m1 = self.request.recv(1024)
+
+            self._deviceID = m1[: DEVICE_ID_LENGTH]
+            self._sessionID = m1[DEVICE_ID_LENGTH:]
+
+            print(f"Device ID: {self._deviceID}")
+            print(f"Session ID: {self._sessionID}")
 
         # STEP 1-2: verifying the deviceID validity
         op_res = self._helper.set_vault(None, self._deviceID)
@@ -39,12 +46,17 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
         #STEP 4: create and sends M4 to IoT device
         self.request.sendall(self._helper.create_m4())
 
-        # RECEIVING DATA
-        while (data := self.request.settimeout(self._timeout)) is not None:
-            # data registration (out of scope)
-            self._buffer += data
+            # RECEIVING DATA
+            while not (data := self.request.recv(1024)) == b'':
+                # data registration (out of scope)
+                    print(f"Data: {data}")
+                    #self._buffer += data
+                    buffer += data
+                    self.request.sendall(data)
 
-        self._helper.update_vault(self._buffer.encode(), self._sessioID)
+            # self._helper.update_vault(self._buffer.encode(), self._sessioID)
+        except socket.timeout:
+            pass
 
 
 if __name__ == "__main__":
