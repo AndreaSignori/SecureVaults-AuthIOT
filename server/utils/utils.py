@@ -11,3 +11,8 @@ def padding(elem: str, target: int) -> str:
     padding = '0' * diff
 
     return padding + elem
+
+def str_to_dict(s: str) -> dict:
+    s = s.strip("{}").replace("\'", "" )
+
+    return dict(item.split(": ") for item in s.split(", "))
