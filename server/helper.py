@@ -102,7 +102,7 @@ class AuthHelper:
 
         return self._m4_encrypt(message)
 
-    def _compute_session_key(self) -> int:
+    def _compute_session_key(self) -> None:
         self._session_key = self._t1 ^ self._t2
 
     def update_vault(self, key: bytes, id: str):
