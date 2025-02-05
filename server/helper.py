@@ -26,6 +26,8 @@ class AuthHelper:
         self._r1: int = -1
         self._r2: int = -1
         self._t1: int = -1
+        self._t2: int = -1
+        self._session_key: int = -1
 
     def set_vault(self, sv: list[int]|None, id: str|None) -> str|None:
         if self._secure_vault is not None:
@@ -56,20 +58,21 @@ class AuthHelper:
         return str({"C1":",".join(map(str, self._c1)), "r1": self._r1}).encode()
 
     def _m3_decrypt(self, cypher_message: bytes) -> bytes:
-        key: str = self._compute_key1().decode('utf-8')
+        key: str = self._compute_key().decode('utf-8')
 
         if len(key) < 16: # we get AES-128, aka 16 bytes long key
             key = padding(key, 16)
 
         return AES.new(key.encode(), AES.MODE_EAX).decrypt(cypher_message)
 
-    def _compute_key1(self) -> bytes:
+    def _compute_key(self, const: int=0) -> bytes:
         P = self._secure_vault.get_keys(self._c1)
-        k1 = 0
+        key = 0
 
         for i in range(len(P)):
-            k1 ^= P[i]
-        return str(k1).encode()
+            key ^= P[i]
+
+        return str(key ^ const).encode()
 
     def verify_device_response(self, message: bytes) -> bool:
         plain = str_to_dict(self._m3_decrypt(message).decode())
@@ -81,16 +84,26 @@ class AuthHelper:
 
         return plain["r1"] == self._r1
 
+
     def _m4_encrypt(self, plain_message: bytes) -> bytes:
-        key: bytes = self._compute_key2()
+        key: str = self._compute_key(self._t1).decode()
+
+        if len(key) < 16:  # we get AES-128, aka 16 bytes long key
+            key = padding(key, 16)
 
         return AES.new(key, AES.MODE_EAX).encrypt(plain_message)
 
     def create_m4(self):
-        pass
+        self._t2 = randint(GENERATOR_UPPER_BOUND)
 
-    def _compute_key2(self) -> bytes:
-        pass
+        message = str({"r2": self._r2, "t2": self._t2}).encode()
+
+        self._compute_session_key()
+
+        return self._m4_encrypt(message)
+
+    def _compute_session_key(self) -> int:
+        self._session_key = self._t1 ^ self._t2
 
     def update_vault(self, key: bytes, id: str):
         new_vault = self._secure_vault.update(key)

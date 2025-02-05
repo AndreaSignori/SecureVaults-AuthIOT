@@ -45,7 +45,7 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
             # STEP 3-4: verifying the IoT device's response
             if helper.verify_device_response(m3):
                 #STEP 4: create and sends M4 to IoT device
-                #self.request.sendall(self._helper.create_m4())
+                self.request.sendall(helper.create_m4())
 
                 # RECEIVING DATA
                 while not (data := self.request.recv(1024)) == b'':
