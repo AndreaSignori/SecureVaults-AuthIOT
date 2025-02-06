@@ -54,8 +54,7 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
                         #self._buffer += data
                         buffer += data
                         self.request.sendall(data)
-
-            # self._helper.update_vault(self._buffer.encode(), self._sessioID)
+                helper.update_vault(buffer, session_ID.decode())
         except socket.timeout:
             pass
 

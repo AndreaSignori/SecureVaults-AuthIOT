@@ -7,7 +7,7 @@ import hashlib
 import random
 import numpy
 
-PARTITION_DIM = 256 # linked to the hash function used for HMAC
+PARTITION_DIM = 512 # linked to the hash function used for HMAC
 
 class SecureVault:
     """
@@ -27,7 +27,7 @@ class SecureVault:
     def get_keys(self, idxs: list) -> list:
         return [self._sv[idx] for idx in idxs]
 
-    def update(self, key: bytes) -> list: #TODO: da sistemare
+    def update(self, key: bytes) -> list:
         """
         Update the secure vault keys.
         TODO: spiegare algoritmo
@@ -35,18 +35,13 @@ class SecureVault:
         :param key: key use to compute the HMAC signature.
         :param partition_dim: number of bit for each partition
         """
-        h  = hmac.new(key, bytes(self._sv), hashlib.sha256).digest()
+        h  = int(hmac.new(key, ",".join(map(str, self._sv)).encode(), hashlib.sha512).digest().hex(), 16)
+
         vault_partitions = self._compute_vault_partition()
 
-        #print(vault_partitions)
+        self._sv = [h ^ partition for partition in vault_partitions]
 
-        for elem in zip(h, [partition for partition in vault_partitions]):
-            print(elem)
-
-        self._sv = [a ^ b for a, b in zip(h, [partition for partition in vault_partitions])]
-
-        return self._sv
-        #print(self._sv)
+        print(self._sv)
 
     def _compute_vault_partition(self) -> list: #TODO: da sistemare
         """
@@ -54,17 +49,13 @@ class SecureVault:
 
         :return: partition of the current secure vault.
         """
-        # TODO: to fix
-        sv_str = "".join([padding(bin(value).replace("0b", ""), self._m) for value in self._sv])
+        sv_str = "".join(map(str, self._sv))
+        bin_vault = bin(int(sv_str)).replace("0b", "")
 
-        # vault partitioning
-        if (reminder := len(sv_str) % PARTITION_DIM) != 0:
-            sv_str = padding(sv_str, len(sv_str) + reminder)
-        print(sv_str)
+        if (reminder := len(bin_vault) % PARTITION_DIM) != 0:
+            bin_vault = padding(bin_vault, len(bin_vault) + (PARTITION_DIM - reminder))
 
-        vault_partitions = [sv_str[(start := i * PARTITION_DIM) : start + PARTITION_DIM] for i in range(len(sv_str) // PARTITION_DIM)]
-
-        return vault_partitions
+        return [int(f"0b{bin_vault[(start := i * PARTITION_DIM): start + PARTITION_DIM]}", 2) for i in range(len(bin_vault) // PARTITION_DIM)]
 
 if __name__ == '__main__':
     sv = SecureVault([random.getrandbits(6) for _ in range(3)])
