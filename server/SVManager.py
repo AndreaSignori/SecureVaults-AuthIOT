@@ -1,4 +1,5 @@
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
 import contextlib
 import sqlite3
@@ -83,7 +84,8 @@ class SVManager:
         """
         if self._check_id_existence(id):
             with self._connect() as (conn, cur):
-                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (self._cipher.encrypt(sv.encode()), id))
+                print(self._cipher.encrypt(pad(sv.encode(), AES.block_size)).hex())
+                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (self._cipher.encrypt(pad(sv.encode(), AES.block_size,)).hex(), id))
                 conn.commit()
         else:
             print(f"Device with ID {id} not found!")
