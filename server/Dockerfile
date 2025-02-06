@@ -12,6 +12,9 @@ ENV VIRTUAL_ENV="/venv"
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+# install requiremets
+RUN pip install --no-cache-dir -r requiremets.txt # --no-cache-dir is useful to reduce the container/image dimension
+
 # Copy the application script into the container
 COPY . .
 
