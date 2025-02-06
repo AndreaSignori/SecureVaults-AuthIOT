@@ -16,7 +16,7 @@ class AuthHelper:
     """
     Class that define the server side authentication for our protocol
     """
-    def __init__(self, sv: list[int]|None=None):
+    def __init__(self, sv: list|None=None):
         """
         :param sv: secure vault to be used during the authentication
         """

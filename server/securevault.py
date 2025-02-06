@@ -56,8 +56,3 @@ class SecureVault:
             bin_vault = padding(bin_vault, len(bin_vault) + (PARTITION_DIM - reminder))
 
         return [int(f"0b{bin_vault[(start := i * PARTITION_DIM): start + PARTITION_DIM]}", 2) for i in range(len(bin_vault) // PARTITION_DIM)]
-
-if __name__ == '__main__':
-    sv = SecureVault([random.getrandbits(6) for _ in range(3)])
-
-    sv.update(b"dati prova")
