@@ -10,6 +10,7 @@ import numpy as np
 # CONFIG parameters
 DB_NAME = "data/devices.db"
 GENERATOR_UPPER_BOUND = 10000
+KEY_LENGTH = 16 # length of the key according to the AES algorithm that we want to use
 
 class AuthHelper:
     """
@@ -60,8 +61,8 @@ class AuthHelper:
     def _m3_decrypt(self, cypher_message: bytes) -> bytes:
         key: str = self._compute_key().decode('utf-8')
 
-        if len(key) < 16: # we get AES-128, aka 16 bytes long key
-            key = padding(key, 16)
+        if len(key) < KEY_LENGTH:
+            key = padding(key, KEY_LENGTH)
 
         return AES.new(key.encode(), AES.MODE_EAX).decrypt(cypher_message)
 
