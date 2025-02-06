@@ -31,8 +31,8 @@ class SVManager:
             """)
             conn.commit()
 
-        self._cipher = AES.new(KEY, AES.MODE_CBC, IV)
-
+        self._cipher_iv: bytes = b'0' * 16
+        self._decypher_iv: bytes = b''
 
     @contextlib.contextmanager
     def _connect(self) -> (sqlite3.Connection, sqlite3.Cursor):
@@ -58,9 +58,11 @@ class SVManager:
         :return: secure vault
         """
         with self._connect() as (_, cur):
+            cipher = AES.new(KEY, AES.MODE_CBC, IV)
+
             vault = cur.execute(f"SELECT secure_vault FROM devices WHERE device_ID=?", (id,)).fetchone()[0]
 
-            return self._cipher.decrypt(vault.encode()).decode()
+            return cipher.decrypt(bytes.fromhex(vault)).decode()
 
     def insert_device(self, id: str) -> None:
         """
@@ -84,9 +86,12 @@ class SVManager:
         """
         if self._check_id_existence(id):
             with self._connect() as (conn, cur):
-                print(self._cipher.encrypt(pad(sv.encode(), AES.block_size)).hex())
-                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (self._cipher.encrypt(pad(sv.encode(), AES.block_size,)).hex(), id))
+                cipher = AES.new(KEY, AES.MODE_CBC, IV)
+
+                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (cipher.encrypt(pad(sv.encode(), AES.block_size,)).hex(), id))
                 conn.commit()
+
+                self._decypher_iv = cipher.IV
         else:
             print(f"Device with ID {id} not found!")
 
