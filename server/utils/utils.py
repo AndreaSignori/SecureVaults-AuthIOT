@@ -4,13 +4,13 @@ def padding(elem: str, target: int) -> str:
 
     :param elem: element where to apply padding
     :param target: dimension goal for the string
-
     :return: padded string
     """
     diff = target - len(elem)
+
     padding = '0' * diff
 
-    return padding + elem
+    return elem + padding
 
 def str_to_dict(s: str) -> dict:
     s = s.strip("{}").replace("\'", "" )
