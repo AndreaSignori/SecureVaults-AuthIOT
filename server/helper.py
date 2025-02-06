@@ -86,7 +86,7 @@ class AuthHelper:
         if len(key) < KEY_LENGTH: # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key.encode(), AES.MODE_EAX).decrypt(cypher_message)
+        return AES.new(key.encode(), AES.MODE_CBC, iv=b'0' * KEY_LENGTH).decrypt(cypher_message)
 
     def _compute_key(self, index_set: list, const: int=0) -> bytes:
         """
@@ -137,7 +137,7 @@ class AuthHelper:
         if len(key) < KEY_LENGTH:  # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key, AES.MODE_EAX).encrypt(plain_message)
+        return AES.new(key, AES.MODE_CBC, iv=b'0' * KEY_LENGTH).encrypt(plain_message)
 
     def create_m4(self) -> bytes:
         """
