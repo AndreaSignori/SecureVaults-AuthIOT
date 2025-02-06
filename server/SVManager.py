@@ -1,5 +1,11 @@
+from Crypto.Cipher import AES
+
 import contextlib
 import sqlite3
+
+# CONFIG params
+KEY = b"super_secret_key"
+IV = b'0' * 16
 
 class SVManager:
     """
@@ -7,15 +13,12 @@ class SVManager:
     Our database is formed by a single table called `devices`, where each secure vault has associated an IoT device
     since each one has a unique identifier.
     """
-    # TODO: gestione cifratura SV
     def __init__(self, db_name: str) -> None:
         """
         :param db_name: database name (the file name should be end without db)
         """
         if db_name is not None:
             self._db_name: str = db_name
-        #self._connection : sqlite3.Connection|None = None
-        #self.cursor : sqlite3.Cursor|None = None
 
         # database creation if the table exist
         with self._connect() as (conn, cur):
@@ -26,6 +29,8 @@ class SVManager:
             )
             """)
             conn.commit()
+
+        self._cipher = AES.new(KEY, AES.MODE_CBC, IV)
 
 
     @contextlib.contextmanager
@@ -43,7 +48,7 @@ class SVManager:
         cur.close()
         conn.close()
 
-    def get_SV(self, id: str) -> tuple:
+    def get_SV(self, id: str) -> str:
         """
         Get the secure vault associated with the given ID.
 
@@ -52,7 +57,9 @@ class SVManager:
         :return: secure vault
         """
         with self._connect() as (_, cur):
-            return cur.execute(f"SELECT secure_vault FROM devices WHERE device_ID=?", (id,)).fetchone()
+            vault = cur.execute(f"SELECT secure_vault FROM devices WHERE device_ID=?", (id,)).fetchone()[0]
+
+            return self._cipher.decrypt(vault.encode()).decode()
 
     def insert_device(self, id: str) -> None:
         """
@@ -76,7 +83,7 @@ class SVManager:
         """
         if self._check_id_existence(id):
             with self._connect() as (conn, cur):
-                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (sv, id))
+                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (self._cipher.encrypt(sv.encode()), id))
                 conn.commit()
         else:
             print(f"Device with ID {id} not found!")
