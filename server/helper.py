@@ -14,7 +14,7 @@ KEY_LENGTH = 16 # length of the key according to the AES algorithm that we want 
 
 class AuthHelper:
     """
-    Class that define the server side authentication for our protocol
+    Class that define the server side authentication for our protocol defining every operation need to accomplish the authentication
     """
     def __init__(self, sv: list|None=None) -> None:
         """
@@ -31,6 +31,13 @@ class AuthHelper:
         self._session_key: int = -1
 
     def set_vault(self, sv: list[int]|None, id: str|None) -> str|None:
+        """
+        Set the initial value for the secure vault to be used during the authentication according to some possible
+
+        :param sv: values for the secure vault if it knows. Ignore the id parameter
+        :param id: id of the device for which we retrieve from the database
+        :return: string that describe the successful or not. If not explai the why
+        """
         if self._secure_vault is not None:
             return "Secure vault already set"
 
@@ -41,7 +48,7 @@ class AuthHelper:
                 self._secure_vault = SecureVault(sv)
 
                 return "OK: Secure vault set"
-        else:
+        else: # retrieve secure vault from the db
             if (secure_vault := self._manager.get_SV(id)) is not None:
                 secure_vault = [i for i in map(int, list(secure_vault)[0].split(','))]
 
@@ -51,6 +58,13 @@ class AuthHelper:
             return "OK: Secure vault set"
 
     def create_m2(self) -> bytes:
+        """
+        Build message M2={C1, r1}  that consist of the challenge message from server to device as follows:
+            * C1 is a set of p random distinct numbers (p is random too) within 0 and n-1, where n is the number of key in the secure vault. In other words each number of C1 is an index of a key stored in the secure vault
+            * r1 is a random number used for the challenge, later use to verify the response from the device
+
+        :return: message m2 in json format encoded
+        """
         self._c1: np.ndarray= choice(range(self._secure_vault.get_vault_dim()),
                                      size=(randint(1, self._secure_vault.get_vault_dim() + 1),),
                                      replace=False)
@@ -59,15 +73,31 @@ class AuthHelper:
         return str({"C1":",".join(map(str, self._c1)), "r1": self._r1}).encode()
 
     def _m3_decrypt(self, cypher_message: bytes) -> bytes:
-        key: str = self._compute_key().decode('utf-8')
+        """
+        Decrypt a message M3 that will contain r1 and the device challenge for the server
 
-        if len(key) < KEY_LENGTH:
+        :param cypher_message: cypher message using AES
+
+        :return: decrypted message
+        """
+        key: str = self._compute_key(self._c1).decode('utf-8')
+
+        # adjust the key length
+        if len(key) < KEY_LENGTH: # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
         return AES.new(key.encode(), AES.MODE_EAX).decrypt(cypher_message)
 
-    def _compute_key(self, const: int=0) -> bytes:
-        P = self._secure_vault.get_keys(self._c1)
+    def _compute_key(self, index_set: list, const: int=0) -> bytes:
+        """
+        Computes the key as a XOR of all the keys in the secure vault indexed by index_set
+
+        :param index_set: list of indexes of the key values used to compute the XOR
+        :param const: eventual additional value to XORed with the key. Default value is 0, so doesn't influence the final key value
+
+        :return: key used to decrypt the message
+        """
+        P = self._secure_vault.get_keys(index_set)
         key = 0
 
         for i in range(len(P)):
@@ -76,7 +106,14 @@ class AuthHelper:
         return str(key ^ const).encode()
 
     def verify_device_response(self, message: bytes) -> bool:
-        plain = str_to_dict(self._m3_decrypt(message).decode())
+        """
+        Verify the challenge response from the device if the r1 generated is the same in the message received
+
+        :param message: received message from the device containing r1, t1 (portion of the session key) and the new challenge
+
+        :return: True if r1 sent correspond to the one received, False otherwise
+        """
+        plain = str_to_dict(self._m3_decrypt(message).decode()) # convert string in dictionary format to actual dictionary
 
         self._c2 = plain["C2"]
         self._t1 = plain["t1"]
@@ -87,14 +124,28 @@ class AuthHelper:
 
 
     def _m4_encrypt(self, plain_message: bytes) -> bytes:
-        key: str = self._compute_key(self._t1).decode()
+        """
+        Encrypt a message M4 with the key computed as k2 xor t1.
 
-        if len(key) < 16:  # we get AES-128, aka 16 bytes long key
-            key = padding(key, 16)
+        :param plain_message: message to encrypt using AES
+
+        :return: encrypted message
+        """
+        key: str = self._compute_key(self._c2, self._t1).decode()
+
+        # adjust the key length
+        if len(key) < KEY_LENGTH:  # we get AES-128, aka 16 bytes long key
+            key = padding(key, KEY_LENGTH)
 
         return AES.new(key, AES.MODE_EAX).encrypt(plain_message)
 
     def create_m4(self) -> bytes:
+        """
+        Create a message M4=Enc(k2 xor t1, r2||t2), where the content of the message is r2||t2 (r2 is the challenge for the device and t2 is the second part for the session key, and it is a random value).
+        While k2 xor t1 is the key used to encrypt the message.
+
+        :return: encrypted message
+        """
         self._t2 = randint(GENERATOR_UPPER_BOUND)
 
         message = str({"r2": self._r2, "t2": self._t2}).encode()
@@ -104,9 +155,18 @@ class AuthHelper:
         return self._m4_encrypt(message)
 
     def _compute_session_key(self) -> None:
+        """
+        Compute the session key as the xor between t1 and t2
+        """
         self._session_key = self._t1 ^ self._t2
 
     def update_vault(self, key: bytes, id: str) -> None:
-        new_vault = self._secure_vault.update(key)
+        """
+        Update the secure vault with the given key used during the computation of HMAC
 
-        self._manager.update_SV(id, ",".join(new_vault))
+        :param key: HMAC key
+        :param id: id of the device use to save the secure vault into the database kept by the server
+        """
+        new_vault = self._secure_vault.update(key) # compute the updated value for the secure vault
+
+        self._manager.update_SV(id, ",".join(new_vault)) # update the value for the secure vault into the database

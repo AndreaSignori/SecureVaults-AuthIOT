@@ -10,9 +10,12 @@ DEVICE_ID_LENGTH = 11
 
 class AuthenticationHandler(socketserver.BaseRequestHandler):
     def handle(self) -> None:
+        """
+        Describe the authentication server behaviours
+        """
         self.request.settimeout(TIMEOUT) # setting up the timeout to receiving next message from the client
-        buffer: bytes = b''
-        helper: AuthHelper = AuthHelper()
+        buffer: bytes = b'' # contains all the data sent during all the session, after the authentication
+        helper: AuthHelper = AuthHelper() # makes possible to compute the authentication protocol operations
 
         try:
             # AUTHENTICATION
@@ -50,10 +53,9 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
                 # RECEIVING DATA
                 while not (data := self.request.recv(1024)) == b'':
                     # data registration (out of scope)
-                        print(f"Data: {data}")
-                        #self._buffer += data
-                        buffer += data
-                        self.request.sendall(data)
+                    print(f"Data: {data}")
+                    buffer += data
+
                 helper.update_vault(buffer, session_ID.decode())
         except socket.timeout:
             pass
