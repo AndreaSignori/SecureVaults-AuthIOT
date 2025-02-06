@@ -1,3 +1,5 @@
+from typing import List, Any
+
 import numpy as np
 
 from utils.utils import padding
@@ -13,7 +15,7 @@ class SecureVault:
     """
     Class that describe a secure vault. A secure vault, briefly, is a set of n keys of m bits each that is shared between each IoT device and server.
     """
-    def __init__(self, sv: list[int]):
+    def __init__(self, sv: list[int]) -> None:
         """
         :param sv: list of all keys that belong to the secure vault.
         """
@@ -41,9 +43,9 @@ class SecureVault:
 
         self._sv = [h ^ partition for partition in vault_partitions]
 
-        print(self._sv)
+        return self._sv
 
-    def _compute_vault_partition(self) -> list: #TODO: da sistemare
+    def _compute_vault_partition(self) -> list:
         """
         Divide the current secure vault into j partition of 256 bits.
 

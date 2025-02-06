@@ -9,7 +9,7 @@ TIMEOUT = 1
 DEVICE_ID_LENGTH = 11
 
 class AuthenticationHandler(socketserver.BaseRequestHandler):
-    def handle(self):
+    def handle(self) -> None:
         self.request.settimeout(TIMEOUT) # setting up the timeout to receiving next message from the client
         buffer: bytes = b''
         helper: AuthHelper = AuthHelper()

@@ -8,7 +8,7 @@ class SVManager:
     since each one has a unique identifier.
     """
     # TODO: gestione cifratura SV
-    def __init__(self, db_name: str):
+    def __init__(self, db_name: str) -> None:
         """
         :param db_name: database name (the file name should be end without db)
         """

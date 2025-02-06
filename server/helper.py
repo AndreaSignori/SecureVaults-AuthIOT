@@ -16,7 +16,7 @@ class AuthHelper:
     """
     Class that define the server side authentication for our protocol
     """
-    def __init__(self, sv: list|None=None):
+    def __init__(self, sv: list|None=None) -> None:
         """
         :param sv: secure vault to be used during the authentication
         """
@@ -94,7 +94,7 @@ class AuthHelper:
 
         return AES.new(key, AES.MODE_EAX).encrypt(plain_message)
 
-    def create_m4(self):
+    def create_m4(self) -> bytes:
         self._t2 = randint(GENERATOR_UPPER_BOUND)
 
         message = str({"r2": self._r2, "t2": self._t2}).encode()
@@ -106,7 +106,7 @@ class AuthHelper:
     def _compute_session_key(self) -> None:
         self._session_key = self._t1 ^ self._t2
 
-    def update_vault(self, key: bytes, id: str):
+    def update_vault(self, key: bytes, id: str) -> None:
         new_vault = self._secure_vault.update(key)
 
         self._manager.update_SV(id, ",".join(new_vault))
