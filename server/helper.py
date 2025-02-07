@@ -2,6 +2,7 @@ from SVManager import SVManager
 from securevault import SecureVault
 from numpy.random import choice, randint
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 
 from utils.utils import padding, str_to_dict
 
@@ -11,6 +12,7 @@ import numpy as np
 DB_NAME = "data/devices.db"
 GENERATOR_UPPER_BOUND = 10000
 KEY_LENGTH = 16 # length of the key according to the AES algorithm that we want to use
+IV = b'0' * KEY_LENGTH
 
 class AuthHelper:
     """
@@ -86,7 +88,7 @@ class AuthHelper:
         if len(key) < KEY_LENGTH: # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key.encode(), AES.MODE_CBC, iv=b'0' * KEY_LENGTH).decrypt(cypher_message)
+        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).decrypt(bytes.fromhex(cypher_message.decode()))
 
     def _compute_key(self, index_set: list, const: int=0) -> bytes:
         """
@@ -137,7 +139,7 @@ class AuthHelper:
         if len(key) < KEY_LENGTH:  # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key, AES.MODE_CBC, iv=b'0' * KEY_LENGTH).encrypt(plain_message)
+        return AES.new(key, AES.MODE_CBC, iv=IV).encrypt(pad(plain_message, AES.block_size)).hex().encode()
 
     def create_m4(self) -> bytes:
         """
