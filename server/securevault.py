@@ -1,13 +1,8 @@
-from typing import List, Any
-
-import numpy as np
-
 from utils.utils import padding
 
+import numpy as np
 import hmac
 import hashlib
-import random
-import numpy
 
 # CONFIG params
 PARTITION_DIM = 512 # linked to the hash function used for HMAC

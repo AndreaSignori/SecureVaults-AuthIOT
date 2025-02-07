@@ -1,5 +1,5 @@
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+from Crypto.Util.Padding import pad
 
 import contextlib
 import sqlite3
@@ -30,9 +30,6 @@ class SVManager:
             )
             """)
             conn.commit()
-
-        self._cipher_iv: bytes = b'0' * 16
-        self._decypher_iv: bytes = b''
 
     @contextlib.contextmanager
     def _connect(self) -> (sqlite3.Connection, sqlite3.Cursor):
@@ -90,8 +87,6 @@ class SVManager:
 
                 cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (cipher.encrypt(pad(sv.encode(), AES.block_size,)).hex(), id))
                 conn.commit()
-
-                self._decypher_iv = cipher.IV
         else:
             print(f"Device with ID {id} not found!")
 

@@ -2,7 +2,6 @@ from helper import AuthHelper
 
 import socket
 import socketserver
-import json
 
 # CONFIG parameters
 TIMEOUT = 1
