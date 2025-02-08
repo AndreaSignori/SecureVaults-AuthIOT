@@ -5,7 +5,7 @@ import hmac
 import hashlib
 
 # CONFIG params
-PARTITION_DIM = 512 # linked to the hash function used for HMAC
+PARTITION_DIM = 512 # depends on the hash function used to compute the HMAC
 
 class SecureVault:
     """
@@ -56,7 +56,11 @@ class SecureVault:
 
     def _compute_vault_partition(self) -> list:
         """
-        Divide the current secure vault into j partition of PARTITION_DIM bits.
+        The partitions are computed as follows:
+            * concatenate all the keys in the secure vault in a single string;
+            * convert the number in binary;
+            * applied a padding at the end adding an arbitrary number of zeros, if it is necessary;
+            * divide the current binary representation into j partition of PARTITION_DIM bits.
 
         :return: partition of the current secure vault.
         """
