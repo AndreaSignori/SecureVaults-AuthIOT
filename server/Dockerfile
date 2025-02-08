@@ -7,7 +7,8 @@ WORKDIR /svr
 # Install SQLite
 RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
 
-PORT 5050/tcp # port where the container should listen
+# port where the container should listen
+EXPOSE 5050/tcp
 
 # Set up and activate virtual environment
 ENV VIRTUAL_ENV="/venv"
@@ -15,7 +16,8 @@ RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # install requiremets
-RUN pip install --no-cache-dir -r requiremets.txt # --no-cache-dir is useful to reduce the container/image dimension
+# --no-cache-dir is useful to reduce the container/image dimension
+RUN pip install --no-cache-dir numpy pycryptodome
 
 # Copy the application script into the container
 COPY . .
