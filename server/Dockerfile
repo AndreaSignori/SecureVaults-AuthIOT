@@ -7,6 +7,8 @@ WORKDIR /svr
 # Install SQLite
 RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
 
+PORT 5050/tcp # port where the container should listen
+
 # Set up and activate virtual environment
 ENV VIRTUAL_ENV="/venv"
 RUN python -m venv $VIRTUAL_ENV
