@@ -12,4 +12,9 @@ class TemperatureSensor:
         self.std_deviation = std_deviation
 
     def get_temperature(self) -> np.ScalarType:
+        """
+        Generate temperature measure from a normal distribution.
+
+        :return: temperature measure
+        """
         return normal(self.mean, self.std_deviation)
