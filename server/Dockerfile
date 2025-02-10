@@ -23,4 +23,4 @@ RUN pip install --no-cache-dir numpy pycryptodome
 COPY . .
 
 # Run the Python script
-CMD ["python3", "test.py"]
+CMD ["python3", "server.py"]
