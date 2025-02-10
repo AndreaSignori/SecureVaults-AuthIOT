@@ -1,11 +1,11 @@
 from helper import AuthHelper
+from utils.utils import str_to_dict
 
 import socket
 import socketserver
 
 # CONFIG parameters
 TIMEOUT = 1
-DEVICE_ID_LENGTH = 11
 
 class AuthenticationHandler(socketserver.BaseRequestHandler):
     def handle(self) -> None:
@@ -20,10 +20,10 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
             # AUTHENTICATION
 
             # STEP1: receiving M1 from IoT device
-            m1 = self.request.recv(1024)
+            m1 = str_to_dict(self.request.recv(1024).decode())
 
-            device_ID: bytes = m1[: DEVICE_ID_LENGTH]
-            session_ID: bytes = m1[DEVICE_ID_LENGTH :]
+            device_ID: bytes = m1["device_ID"]
+            session_ID: bytes = m1["session_ID"]
 
             print(f"Device ID: {device_ID}")
             print(f"Session ID: {session_ID}")
