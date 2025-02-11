@@ -6,8 +6,8 @@ from Crypto.Util.Padding import pad
 KEY = b"super_secret_key"
 IV = b'0' * 16
 
-class memManager:
-    def __init__(self, mem_idx: str):
+class MemManager:
+    def __init__(self, mem_idx: str) -> None:
         self._mem_idx = mem_idx
 
     def read(self) -> str:

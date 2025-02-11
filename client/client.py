@@ -1,5 +1,4 @@
-#from securevault import SecureVault
-
+from securevault import SecureVault
 from utils.utils import str_to_dict
 from sensors import TemperatureSensor
 from helper import AuthHelper
@@ -21,7 +20,7 @@ if __name__ == '__main__':
     # sensors initialization
     tempSensor = TemperatureSensor()
 
-    securevault = helper.set_vault()
+    securevault: SecureVault = helper.set_vault()
 
     # Create a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
