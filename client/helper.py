@@ -40,10 +40,13 @@ class AuthHelper:
 
     def set_vault(self) -> str:
         """
-        Set the initial value for the secure vault to be used during the authentication according to some possible
+        Set the initial value for the secure vault
+
+        :return: result string
         """
         if not (len(sv := self._mem_manager.read().split(','))) == 0:
             self._secure_vault = SecureVault([i for i in map(int, sv)])
+
             return ""
         else:
             return "FAILED - Secure Vault not present in the memory"
@@ -51,6 +54,9 @@ class AuthHelper:
     def create_m1(self, device_id, session_id) -> bytes:
         """
         Build message M1{deviceID, sessionID} that is a sort of "welcoming" message from the client to the server
+
+        :param device_id: the device ID
+        :param session_id: the session ID
 
         :return: message m1 in json format encoded
         """
@@ -91,8 +97,9 @@ class AuthHelper:
 
     def create_m3(self) -> bytes:
         """
-        Create a message M4=Enc(k2 xor t1, r2||t2), where the content of the message is r2||t2 (r2 is the challenge for the device and t2 is the second part for the session key, and it is a random value).
-        While k2 xor t1 is the key used to encrypt the message.
+        Create a message M3=Enc(k1, r1||t1||{C2, r2}), where the content of the message is r1||t1||{C2, r2}
+        (r1 is the challenge for the device, t1 is the first part for the session key(random value) and the challenge for the server).
+        While k1 is the key used to encrypt the message.
 
         :return: encrypted message
         """
@@ -108,9 +115,9 @@ class AuthHelper:
 
     def _m4_decrypt(self, cypher_message: bytes) -> bytes:
         """
-        Encrypt a message M4 with the key computed as k2 xor t1.
+        Decrypt a message M4 with the key computed as k2 xor t1.
 
-        :param plain_message: message to encrypt using AES
+        :param cypher_message: message to encrypt using AES
 
         :return: encrypted message
         """
@@ -124,11 +131,11 @@ class AuthHelper:
 
     def verify_server_response(self, message: bytes) -> bool:
         """
-        Verify the challenge response from the device if the r1 generated is the same in the message received
+        Verify the challenge response from the server if the r2 generated is the same in the message received.
 
         :param message: received message from the device containing r1, t1 (portion of the session key) and the new challenge
 
-        :return: True if r1 sent correspond to the one received, False otherwise
+        :return: True if r2 sent correspond to the one received, False otherwise
         """
         plain = str_to_dict(self._m4_decrypt(message).decode()) # convert string in dictionary format to actual dictionary
 
@@ -150,7 +157,6 @@ class AuthHelper:
         Update the secure vault with the given key used during the computation of HMAC
 
         :param key: HMAC key
-        :param id: id of the device use to save the secure vault into the database kept by the server
         """
         new_vault = self._secure_vault.update(key) # compute the updated value for the secure vault
 
