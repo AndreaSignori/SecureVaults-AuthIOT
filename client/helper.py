@@ -38,13 +38,15 @@ class AuthHelper:
     def set_r1(self, value: int) -> None:
         self._r1 = value
 
-    def set_vault(self) -> SecureVault:
+    def set_vault(self) -> str:
         """
         Set the initial value for the secure vault to be used during the authentication according to some possible
-
-        :return:
         """
-        return SecureVault([i for i in map(int, self._mem_manager.read().split(','))])
+        if not (len(sv := self._mem_manager.read().split(','))) == 0:
+            self._secure_vault = SecureVault([i for i in map(int, sv)])
+            return ""
+        else:
+            return "FAILED - Secure Vault not present in the memory"
 
     def create_m1(self, device_id, session_id) -> bytes:
         """

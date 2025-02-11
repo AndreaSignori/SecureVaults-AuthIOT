@@ -11,9 +11,15 @@ class MemManager:
         self._mem_idx = mem_idx
 
     def read(self) -> str:
-        with open(self._mem_idx, "rb") as f:
-             return AES.new(KEY, AES.MODE_CBC, iv=IV).decrypt(f.read()).decode()
+        try:
+            with open(self._mem_idx, "rb") as f:
+                 return AES.new(KEY, AES.MODE_CBC, iv=IV).decrypt(f.read()).decode()
+        except FileNotFoundError:
+            return ""
 
     def write(self, new_content: str) -> None:
-        with open(self._mem_idx, "wb") as f:
-            f.write(AES.new(KEY, AES.MODE_CBC, iv=IV).encrypt(pad(new_content.encode(), AES.block_size)))
+        try:
+            with open(self._mem_idx, "wb") as f:
+                f.write(AES.new(KEY, AES.MODE_CBC, iv=IV).encrypt(pad(new_content.encode(), AES.block_size)))
+        except FileNotFoundError:
+            pass
