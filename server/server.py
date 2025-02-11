@@ -49,12 +49,13 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
                 #STEP 4: create and sends M4 to IoT device
                 self.request.sendall(helper.create_m4())
 
-                # RECEIVING DATA
+                # STEP 5: RECEIVING DATA
                 while not (data := self.request.recv(1024)) == b'':
                     # data registration (out of scope)
                     print(f"Data: {data}")
                     buffer += data
 
+                # STEP 6: secure vault update
                 helper.update_vault(buffer, session_ID.decode())
         except socket.timeout:
             pass
