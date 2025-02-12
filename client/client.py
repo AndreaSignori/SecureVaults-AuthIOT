@@ -7,7 +7,7 @@ import socket
 import time
 
 # CONFIG parameters
-DEVICE_ID = "ID_Prova30L"
+DEVICE_ID = "IOTAuth30L"
 SESSION_ID = "ID_Session"
 TIMEOUT = 1
 SESSION_DURATION = 60 # in second
