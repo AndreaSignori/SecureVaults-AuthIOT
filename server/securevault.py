@@ -38,7 +38,8 @@ class SecureVault:
         Update the secure vault keys according to the following algorithm at the end of the session.
             * compute the HMAC of the actual secure vault value with a given key (in this case we use the data sent during all the session as key);
             * divide the current value of the secure vault in j equal partition fo k bits (k is the length in bits of the HMAC result);
-            * XORed each partition of the secure vault with the HMAC result.
+            * XORed each partition of the secure vault with the HMAC result;
+            * take the first m bits of the XOR results
         NOTE:
             if the size of the secure vault is not divisible for k, we add a sequence of zeros at the end, as padding, in order to get j equal partitions.
 
@@ -46,28 +47,35 @@ class SecureVault:
 
         :return: secure vault updated.
         """
-        h  = int(hmac.new(key, ",".join(map(str, self._sv)).encode(), hashlib.sha512).digest().hex(), 16)
-
+        print(self._sv)
+        h = int(hmac.new(key, ",".join(map(str, self._sv)).encode(), hashlib.sha512).digest().hex(), 16)
         vault_partitions = self._compute_vault_partition()
 
-        self._sv = [h ^ partition for partition in vault_partitions]
+        self._sv = [int(bin(h ^ partition)[: self._m + 2], 2) for partition in vault_partitions]
 
         return self._sv
 
     def _compute_vault_partition(self) -> list:
         """
         The partitions are computed as follows:
-            * concatenate all the keys in the secure vault in a single string;
             * convert the number in binary;
-            * applied a padding at the end adding an arbitrary number of zeros, if it is necessary;
-            * divide the current binary representation into j partition of PARTITION_DIM bits.
+            * applied a padding at the end adding an arbitrary number of zeros, if it is necessary, to every key in order to get partition with dimension PARTITION_DIM (even if te dimension of the key is greater than PARTITION_DIM);
 
         :return: partition of the current secure vault.
         """
-        sv_str = "".join(map(str, self._sv))
-        bin_vault = bin(int(sv_str)).replace("0b", "")
+        bin_vault = [bin(key).replace("0b", "") for key in self._sv]
 
-        if (reminder := len(bin_vault) % PARTITION_DIM) != 0:
-            bin_vault = padding(bin_vault, len(bin_vault) + (PARTITION_DIM - reminder)) # PARTITION - reminder gives an amount of zeros need to add to get a secure vault divisible by k
+        for i, bin_key in enumerate(bin_vault):
+            if (reminder := len(bin_key) % PARTITION_DIM) != 0:
+                bin_vault[i] = padding(bin_key, len(bin_key) + (
+                            PARTITION_DIM - reminder))  # PARTITION - reminder gives an amount of zeros need to add to get a secure vault divisible by k
 
-        return [int(f"0b{bin_vault[(start := i * PARTITION_DIM): start + PARTITION_DIM]}", 2) for i in range(len(bin_vault) // PARTITION_DIM)]
+        # check if all key has dimension PARTITION_DIM
+        for i, key in enumerate(bin_vault):
+            if len(key) > PARTITION_DIM:
+                bin_vault.pop(i)
+
+                bin_vault = bin_vault + [key[(start := i * PARTITION_DIM): start + PARTITION_DIM] for i in
+                                         range(len(key) // PARTITION_DIM)]
+
+        return [int(f"0b{bin_key}", 2) for bin_key in bin_vault]
