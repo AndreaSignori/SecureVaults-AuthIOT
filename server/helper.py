@@ -1,18 +1,18 @@
-from SVManager import SVManager
-from securevault import SecureVault
 from numpy.random import choice, randint
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
+from SVManager import SVManager
+from securevault import SecureVault
 from utils.utils import padding, str_to_dict
 
 import numpy as np
 
 # CONFIG parameters
-DB_NAME = "data/devices.db"
+DB_NAME = "./data/devices.db"
 GENERATOR_UPPER_BOUND = 10000
-KEY_LENGTH = 16 # length of the key according to the AES algorithm that we want to use
-IV = b'0' * KEY_LENGTH
+KEY_LENGTH = 32 # length of the key according to the AES algorithm that we want to use
+IV = b'0' * 16 #* KEY_LENGTH
 
 class AuthHelper:
     """
@@ -52,7 +52,7 @@ class AuthHelper:
                 return "OK: Secure vault set"
         else: # retrieve secure vault from the db
             if (secure_vault := self._manager.get_SV(id)) is not None:
-                secure_vault = [i for i in map(int, list(secure_vault)[0].split(','))]
+                secure_vault = [i for i in map(int, secure_vault.replace('\x06', '').split(','))]
 
                 self._secure_vault = SecureVault(secure_vault)
             else:
@@ -72,7 +72,7 @@ class AuthHelper:
                                      replace=False)
         self._r1 = randint(GENERATOR_UPPER_BOUND)
 
-        return str({"C1":",".join(map(str, self._c1)), "r1": self._r1}).encode()
+        return str({"C1": ",".join(map(str, self._c1)), "r1": self._r1}).encode()
 
     def _m3_decrypt(self, cypher_message: bytes) -> bytes:
         """
@@ -85,10 +85,10 @@ class AuthHelper:
         key: str = self._compute_key(self._c1).decode('utf-8')
 
         # adjust the key length
-        if len(key) < KEY_LENGTH: # we get AES-128, aka 16 bytes long key
+        if len(key) < KEY_LENGTH: # we get AES-256, aka 32 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).decrypt(bytes.fromhex(cypher_message.decode()))
+        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).decrypt(cypher_message)
 
     def _compute_key(self, index_set: list, const: int=0) -> bytes:
         """
@@ -117,12 +117,11 @@ class AuthHelper:
         """
         plain = str_to_dict(self._m3_decrypt(message).decode()) # convert string in dictionary format to actual dictionary
 
-        self._c2 = plain["C2"]
-        self._t1 = plain["t1"]
-        self._r2 = plain["r2"]
+        self._c2 = [i for i in map(int, plain["C2"].split(','))]
+        self._t1 = int(plain["t1"])
+        self._r2 = int("".join([c for c in plain["r2"] if c.isprintable()]))
 
-
-        return plain["r1"] == self._r1
+        return int(plain["r1"]) == self._r1
 
 
     def _m4_encrypt(self, plain_message: bytes) -> bytes:
@@ -139,7 +138,7 @@ class AuthHelper:
         if len(key) < KEY_LENGTH:  # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key, AES.MODE_CBC, iv=IV).encrypt(pad(plain_message, AES.block_size)).hex().encode()
+        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).encrypt(pad(plain_message, AES.block_size)).hex().encode()
 
     def create_m4(self) -> bytes:
         """
@@ -162,13 +161,14 @@ class AuthHelper:
         """
         self._session_key = self._t1 ^ self._t2
 
-    def update_vault(self, key: bytes, id: str) -> None:
+    def update_vault(self, key: bytes, device: str) -> None:
         """
         Update the secure vault with the given key used during the computation of HMAC
 
         :param key: HMAC key
-        :param id: id of the device use to save the secure vault into the database kept by the server
+        :param device: id of the device use to save the secure vault into the database kept by the server
         """
-        new_vault = self._secure_vault.update(key) # compute the updated value for the secure vault
+        new_vault = [i for i in map(str, self._secure_vault.update(key))] # compute the updated value for the secure vault
+        print(new_vault)
 
-        self._manager.update_SV(id, ",".join(new_vault)) # update the value for the secure vault into the database
+        self._manager.update_SV(device, ",".join(new_vault))  # update the value for the secure vault into the database
