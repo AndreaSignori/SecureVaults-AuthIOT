@@ -51,8 +51,12 @@ class AuthHelper:
 
                 return "OK: Secure vault set"
         else: # retrieve secure vault from the db
-            if (secure_vault := self._manager.get_SV(id)) is not None:
-                secure_vault = [i for i in map(int, secure_vault.replace('\x06', '').split(','))]
+            if (secure_vault := self._manager.get_SV(id).split(',')) is not None:
+                # removing non-printable character maybe added by the encryption (due to padding)
+                secure_vault[-1] = "".join([c for c in secure_vault[-1] if c.isprintable()])
+                secure_vault = ",".join(secure_vault)
+
+                secure_vault = [i for i in map(int, secure_vault.split(','))]
 
                 self._secure_vault = SecureVault(secure_vault)
             else:
