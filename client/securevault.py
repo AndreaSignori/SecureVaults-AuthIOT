@@ -47,7 +47,6 @@ class SecureVault:
 
         :return: secure vault updated.
         """
-        print(self._sv)
         h  = int(hmac.new(key, ",".join(map(str, self._sv)).encode(), hashlib.sha512).digest().hex(), 16)
         vault_partitions = self._compute_vault_partition()
 

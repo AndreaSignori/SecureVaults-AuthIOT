@@ -13,7 +13,11 @@ class MemManager:
     def read(self) -> str:
         try:
             with open(self._mem_idx, "rb") as f:
-                 return AES.new(KEY, AES.MODE_CBC, iv=IV).decrypt(f.read()).decode()
+                plain = AES.new(KEY, AES.MODE_CBC, iv=IV).decrypt(f.read()).decode().split(',')
+
+                plain[-1] = "".join([c for c in plain[-1].strip(',') if c.isprintable()])
+
+                return ",".join(plain)
         except FileNotFoundError:
             return ""
 

@@ -16,50 +16,47 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
         buffer: bytes = b'' # contains all the data sent during all the session, after the authentication
         helper: AuthHelper = AuthHelper() # makes possible to compute the authentication protocol operations
 
+        device_ID: str = ""
+
         try:
             # AUTHENTICATION
-
             # STEP1: receiving M1 from IoT device
             m1 = str_to_dict(self.request.recv(1024).decode())
+            print(f"Received M1: {m1}")
 
-            device_ID: bytes = m1["device_ID"]
-            session_ID: bytes = m1["session_ID"]
-
-            print(f"Device ID: {device_ID}")
-            print(f"Session ID: {session_ID}")
+            device_ID: str = m1["device_ID"]
+            session_ID: str = m1["session_ID"]
 
             # STEP 1-2: verifying the deviceID validity
-            op_res = helper.set_vault(None, device_ID.decode())
+            op_res = helper.set_vault(None, device_ID)
 
             if not op_res.startswith("OK"):
                 return
 
             # STEP 2: creates and sends M2 to IoT device
             print("Sending M2 to the client!")
-
             self.request.sendall(helper.create_m2())
 
             # STEP 3: receiving M3 from IoT device
             m3 = self.request.recv(1024)
-
             print(f"Received M3: {m3}")
 
             # STEP 3-4: verifying the IoT device's response
             if helper.verify_device_response(m3):
                 #STEP 4: create and sends M4 to IoT device
+                print("Sending M4 to the client!")
                 self.request.sendall(helper.create_m4())
 
                 # STEP 5: RECEIVING DATA
                 while not (data := self.request.recv(1024)) == b'':
                     # data registration (out of scope)
-                    print(f"Data: {data}")
                     buffer += data
-
-                # STEP 6: secure vault update
-                helper.update_vault(buffer, session_ID.decode())
+                    print(f"Received data: {data}")
         except socket.timeout:
-            pass
-
+            print("Socket timed out")
+            if not buffer == b'':
+                # STEP 6: secure vault update
+                helper.update_vault(buffer, device_ID)
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 5050

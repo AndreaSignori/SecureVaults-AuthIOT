@@ -21,6 +21,7 @@ def str_to_dict(s: str) -> dict:
 
     :return: dictionary described by string passed as parameter
     """
-    s = s.strip("{}").replace("\'", "" )
+    print("Message to convert in dict:", s)
+    s = s.strip("{}").replace("\'", "" ).replace('}', '') # the last replace we added because, for some reason, in some case the first strip doesn't remove '}' at the end
 
     return dict(item.split(": ") for item in s.split(", "))

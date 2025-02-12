@@ -9,10 +9,10 @@ from memManager import MemManager
 import numpy as np
 
 # CONFIG parameters
-MEM_IDX = "./mem/mem.txt"
+MEM_IDX = "./memory/mem.txt"
 GENERATOR_UPPER_BOUND = 10000
-KEY_LENGTH = 16 # length of the key according to the AES algorithm that we want to use
-IV = b'0' * KEY_LENGTH
+KEY_LENGTH = 32 # length of the key according to the AES algorithm that we want to use
+IV = b'0' * 16 #* KEY_LENGTH
 
 class AuthHelper:
     """
@@ -44,8 +44,8 @@ class AuthHelper:
 
         :return: result string
         """
-        if not (len(sv := self._mem_manager.read().split(','))) == 0:
-            self._secure_vault = SecureVault([i for i in map(int, sv)])
+        if not (len(sv := [int(i) for i in self._mem_manager.read().split(',')])) == 0:
+            self._secure_vault = SecureVault(sv)
 
             return ""
         else:
@@ -73,10 +73,11 @@ class AuthHelper:
         key: str = self._compute_key(self._c1).decode('utf-8')
 
         # adjust the key length
-        if len(key) < KEY_LENGTH: # we get AES-128, aka 16 bytes long key
+        if len(key) < KEY_LENGTH: # we get AES-256, aka 32 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).encrypt(pad(plain_message, AES.block_size)).hex().encode()
+
+        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).encrypt(pad(plain_message, AES.block_size))#.hex().encode()
 
     def _compute_key(self, index_set: list, const: int=0) -> bytes:
         """
@@ -103,15 +104,13 @@ class AuthHelper:
 
         :return: encrypted message
         """
-        self._t1 = np.random.randint(GENERATOR_UPPER_BOUND)
+        self._t1 = randint(GENERATOR_UPPER_BOUND)
         self._c2: np.ndarray = choice(range(self._secure_vault.get_vault_dim()),
                                       size=(randint(1, self._secure_vault.get_vault_dim() + 1),),
                                       replace=False)
         self._r2 = randint(GENERATOR_UPPER_BOUND)
 
-        message = str({"r1": self._r1, "t1": self._t1, "C2": self._c2, "r2": self._r2}).encode()
-
-        return self._m3_encrypt(message)
+        return self._m3_encrypt(str({"r1": self._r1, "t1": self._t1, "C2": ",".join(map(str, self._c2)), "r2": self._r2}).encode())
 
     def _m4_decrypt(self, cypher_message: bytes) -> bytes:
         """
@@ -127,7 +126,7 @@ class AuthHelper:
         if len(key) < KEY_LENGTH:  # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key, AES.MODE_CBC, iv=IV).decrypt(bytes.fromhex(cypher_message.decode()))
+        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).decrypt(bytes.fromhex(cypher_message.decode()))
 
     def verify_server_response(self, message: bytes) -> bool:
         """
@@ -139,12 +138,11 @@ class AuthHelper:
         """
         plain = str_to_dict(self._m4_decrypt(message).decode()) # convert string in dictionary format to actual dictionary
 
-        self._t2 = plain["t2"]
-        self._r2 = plain["r2"]
+        self._t2 = int("".join([c for c in plain["t2"] if c.isprintable()]))
 
         self._compute_session_key()
 
-        return plain["r2"] == self._r2
+        return int(plain["r2"]) == self._r2
 
     def _compute_session_key(self) -> None:
         """
@@ -158,6 +156,6 @@ class AuthHelper:
 
         :param key: HMAC key
         """
-        new_vault = self._secure_vault.update(key) # compute the updated value for the secure vault
+        new_vault = [i for i in map(str, self._secure_vault.update(key))] # compute the updated value for the secure vault
 
         self._mem_manager.write(",".join(new_vault)) # update the value for the secure vault into the database

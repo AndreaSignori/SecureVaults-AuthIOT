@@ -74,21 +74,21 @@ class SVManager:
         else:
             print(f"Device with ID {id} already registered!")
 
-    def update_SV(self, id: str, sv: str) -> None:
+    def update_SV(self, device: str, sv: str) -> None:
         """
         Update an existing secure vault associated with the given ID.
 
-        :param id: identifier for IoT device associated to a secure vault
+        :param device: identifier for IoT device associated to a secure vault
         :param sv: new value for secure vault
         """
-        if self._check_id_existence(id):
+        if self._check_id_existence(device):
             with self._connect() as (conn, cur):
                 cipher = AES.new(KEY, AES.MODE_CBC, IV)
 
-                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (cipher.encrypt(pad(sv.encode(), AES.block_size,)).hex(), id))
+                cur.execute("UPDATE devices SET secure_vault=? WHERE device_ID=?", (cipher.encrypt(pad(sv.encode(), AES.block_size,)).hex(), device))
                 conn.commit()
         else:
-            print(f"Device with ID {id} not found!")
+            print(f"Device with ID {device} not found!")
 
     def _check_id_existence(self, id: str) -> bool:
         """
