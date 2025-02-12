@@ -173,6 +173,5 @@ class AuthHelper:
         :param device: id of the device use to save the secure vault into the database kept by the server
         """
         new_vault = [i for i in map(str, self._secure_vault.update(key))] # compute the updated value for the secure vault
-        print(new_vault)
 
         self._manager.update_SV(device, ",".join(new_vault))  # update the value for the secure vault into the database

@@ -22,7 +22,7 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
             # AUTHENTICATION
             # STEP1: receiving M1 from IoT device
             m1 = str_to_dict(self.request.recv(1024).decode())
-            print(f"Received M1: {m1}")
+            #print(f"Received M1: {m1}")
 
             device_ID: str = m1["device_ID"]
             session_ID: str = m1["session_ID"]
@@ -34,24 +34,23 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
                 return
 
             # STEP 2: creates and sends M2 to IoT device
-            print("Sending M2 to the client!")
+            #print("Sending M2 to the client!")
             self.request.sendall(helper.create_m2())
 
             # STEP 3: receiving M3 from IoT device
             m3 = self.request.recv(1024)
-            print(f"Received M3: {m3}")
+            #print(f"Received M3: {m3}")
 
             # STEP 3-4: verifying the IoT device's response
             if helper.verify_device_response(m3):
                 #STEP 4: create and sends M4 to IoT device
-                print("Sending M4 to the client!")
+                #print("Sending M4 to the client!")
                 self.request.sendall(helper.create_m4())
 
                 # STEP 5: RECEIVING DATA
                 while not (data := self.request.recv(1024)) == b'':
                     # data registration (out of scope)
                     buffer += data
-                    print(f"Received data: {data}")
         except socket.timeout:
             print("Socket timed out")
             if not buffer == b'':
