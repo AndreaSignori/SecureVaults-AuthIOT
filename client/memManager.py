@@ -1,7 +1,6 @@
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
-
 # CONFIG params
 KEY = b"super_secret_key"
 IV = b'0' * 16
