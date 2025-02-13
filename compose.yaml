@@ -4,3 +4,11 @@ services:
     ports:
       - 5050:5050
 
+    container_name: auth-server
+
+  client:
+    build: client
+    container_name: auth-client
+    links:
+      - server
+

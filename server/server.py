@@ -58,7 +58,8 @@ class AuthenticationHandler(socketserver.BaseRequestHandler):
                 helper.update_vault(buffer, device_ID)
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", 5050
+    HOST, PORT = "localhost", 5050 # for local
+    #HOST, PORT = "auth-server", 5050  # for docker
 
     # server creation and binding the socket to a given port
     auth_server = socketserver.TCPServer((HOST, PORT), AuthenticationHandler)

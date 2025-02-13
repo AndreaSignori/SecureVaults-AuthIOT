@@ -12,7 +12,8 @@ TIMEOUT = 1
 SESSION_DURATION = 10 # in second
 
 if __name__ == '__main__':
-    HOST, PORT = "localhost", 5050
+    HOST, PORT = "localhost", 5050 # for local
+    #HOST, PORT = "auth-server", 5050 # for docker
     helper: AuthHelper = AuthHelper() # makes possible to compute the authentication protocol operations
 
     # sensors initialization
@@ -70,7 +71,6 @@ if __name__ == '__main__':
                         # STEP 6: update the secure vault
                         helper.update_vault(buffer.encode())
 
-                # sock.settimeout(10)
                 time.sleep(1)  # wait a second before reinitialize new session
             except socket.timeout:
                 sock.close()
