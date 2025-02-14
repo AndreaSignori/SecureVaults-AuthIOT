@@ -5,10 +5,11 @@ services:
       - 5050:5050
 
     container_name: auth-server
+    user: nobody
 
   client:
     build: client
     container_name: auth-client
     links:
       - server
-
+    user: nobody
