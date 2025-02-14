@@ -1,6 +1,6 @@
 from numpy.random import choice, randint
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 
 from utils.utils import padding, str_to_dict
 from securevault import SecureVault
@@ -126,7 +126,9 @@ class AuthHelper:
         if len(key) < KEY_LENGTH:  # we get AES-128, aka 16 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).decrypt(bytes.fromhex(cypher_message.decode()))
+        cipher = AES.new(key.encode(), AES.MODE_CBC, IV)
+
+        return unpad(cipher.decrypt(bytes.fromhex(cypher_message.decode())), cipher.block_size)
 
     def verify_server_response(self, message: bytes) -> bool:
         """
@@ -138,7 +140,8 @@ class AuthHelper:
         """
         plain = str_to_dict(self._m4_decrypt(message).decode()) # convert string in dictionary format to actual dictionary
 
-        self._t2 = int("".join([c for c in plain["t2"] if c.isprintable()]))
+        #self._t2 = int("".join([c for c in plain["t2"] if c.isprintable()]))
+        self._t2 = int(plain["r2"])
 
         self._compute_session_key()
 

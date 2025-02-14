@@ -1,5 +1,5 @@
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 
 # CONFIG params
 KEY = b"super_secret_key"
@@ -12,11 +12,13 @@ class MemManager:
     def read(self) -> str:
         try:
             with open(self._mem_idx, "rb") as f:
-                plain = AES.new(KEY, AES.MODE_CBC, iv=IV).decrypt(f.read()).decode().split(',')
+                cipher = AES.new(KEY, AES.MODE_CBC, IV)
+                #plain = AES.new(KEY, AES.MODE_CBC, iv=IV).decrypt(f.read()).decode().split(',')
 
-                plain[-1] = "".join([c for c in plain[-1].strip(',') if c.isprintable()])
+                #plain[-1] = "".join([c for c in plain[-1].strip(',') if c.isprintable()])
 
-                return ",".join(plain)
+                #return ",".join(plain)
+                return unpad(cipher.decrypt(f.read()), cipher.block_size).decode()
         except FileNotFoundError:
             return ""
 

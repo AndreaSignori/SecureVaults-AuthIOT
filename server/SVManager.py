@@ -1,5 +1,5 @@
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 
 import contextlib
 import sqlite3
@@ -59,7 +59,7 @@ class SVManager:
 
             vault = cur.execute(f"SELECT secure_vault FROM devices WHERE device_ID=?", (id,)).fetchone()[0]
 
-            return cipher.decrypt(bytes.fromhex(vault)).decode()
+            return unpad(cipher.decrypt(bytes.fromhex(vault)), cipher.block_size).decode()
 
     def insert_device(self, id: str) -> None:
         """

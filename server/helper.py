@@ -1,6 +1,6 @@
 from numpy.random import choice, randint
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 
 from SVManager import SVManager
 from securevault import SecureVault
@@ -92,7 +92,9 @@ class AuthHelper:
         if len(key) < KEY_LENGTH: # we get AES-256, aka 32 bytes long key
             key = padding(key, KEY_LENGTH)
 
-        return AES.new(key.encode(), AES.MODE_CBC, iv=IV).decrypt(cypher_message)
+        cipher = AES.new(key.encode(), AES.MODE_CBC, iv=IV)
+
+        return unpad(cipher.decrypt(cypher_message), cipher.block_size)
 
     def _compute_key(self, index_set: list, const: int=0) -> bytes:
         """
@@ -123,7 +125,8 @@ class AuthHelper:
 
         self._c2 = [i for i in map(int, plain["C2"].split(','))]
         self._t1 = int(plain["t1"])
-        self._r2 = int("".join([c for c in plain["r2"] if c.isprintable()]))
+        #self._r2 = int("".join([c for c in plain["r2"] if c.isprintable()]))
+        self._r2 = int(plain["r2"])
 
         return int(plain["r1"]) == self._r1
 
