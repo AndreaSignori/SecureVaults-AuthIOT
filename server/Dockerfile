@@ -22,5 +22,8 @@ RUN pip install --no-cache-dir numpy pycryptodome
 # Copy the application script into the container
 COPY . .
 
+# run all with unprivileged user
+USER aut-server
+
 # Run the Python script
 CMD ["python3", "server.py"]
