@@ -1,0 +1,65 @@
+theory IOT_Auth_Protocol
+begin
+
+// --- Function Symbols ---
+functions:
+    device_id/0,
+    session_id/0,
+    c1/0, c2/0, r1/0, r2/0, t1/0, t2/0,
+    session_key/0,
+    xor_op/2,
+    m1/2, m2/2, m3/3, m4/2
+
+// --- Protocol Steps ---
+
+rule Client_Send_M1:
+    [ Fr(~device_id), Fr(~session_id) ]
+    --[
+        ClientInitiated(~device_id, ~session_id)
+    ]->
+    [ Out(m1(~device_id, ~session_id)) ]
+
+rule Server_Send_M2:
+    [ In(m1(device_id, session_id)), Fr(~c1), Fr(~r1) ]  // Consume m1 and generate fresh ~c1, ~r1
+    --[
+        ServerResponded(~c1, ~r1)
+    ]->
+    [ Out(m2(~c1, ~r1)), ServerResponded(~c1, ~r1) ]  // Produce m2 and ServerResponded
+
+rule Client_Send_M3:
+    [ In(m2(c1, r1)), Fr(~c2), Fr(~t1), Fr(~r2) ]  // Consume m2 and generate fresh ~c2, ~t1, ~r2
+    --[
+        ClientResponded(~c2, ~t1, ~r2)
+    ]->
+    [ Out(m3(~c2, ~t1, ~r2)), ClientResponded(~c2, ~t1, ~r2) ]  // Produce m3 and ClientResponded
+
+rule Server_Verify_And_Send_M4:
+    [ In(m3(c2, t1, r2)), ServerResponded(c1, r1), ClientResponded(c2, t1, r2), Fr(~t2) ]
+    --[
+        ServerVerified(r1),
+        ServerFinalResponse(r2, ~t2)
+    ]->
+    [ Out(m4(r2, ~t2)), ServerFinalResponse(r2, ~t2) ]  // Produce m4 and ServerFinalResponse
+
+rule Establish_Session_Key:
+    [ ServerFinalResponse(r2, t2), ClientResponded(c2, t1, r2) ]
+    --[
+        SessionKeyEstablished(xor_op(t1, t2))
+    ]->
+    []
+    
+lemma Authentication_Agreement:
+    "All #i #j.
+        ServerFinalResponse(r2, t2) @ #i &
+        ClientResponded(c2, t1, r2) @ #j
+    ==>
+    (Ex #k. ClientInitiated(device_id, session_id) @ #k &
+        (Ex #l. ServerResponded(c1, r1) @ #l &
+        (Ex #m. ClientResponded(c2, t1, r2) @ #m)))"
+        
+lemma Session_Key_Secrecy:
+    "All sk #i.
+        SessionKeyEstablished(sk) @ #i
+    ==>
+    (not (Ex #j. K(sk) @ #j))"
+end
